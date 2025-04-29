@@ -1,103 +1,227 @@
-import Image from "next/image";
+'use client';
+
+import { useEffect, useState } from 'react';
+
+// ✅ Shops + Items Data
+const shops = [
+  {
+    id: 1,
+    name: 'Rohit General Store',
+    lat: 32.2726,
+    lng: 76.3270,
+    category: 'Grocery',
+    items: [
+      { id: '1a', name: 'Maggi', price: 15 },
+      { id: '1b', name: 'Bread', price: 25 },
+      { id: '1c', name: 'Milk', price: 30 },
+    ],
+  },
+  {
+    id: 2,
+    name: 'Sharma Vegetable Mart',
+    lat: 32.2700,
+    lng: 76.3300,
+    category: 'Fruits & Veggies',
+    items: [
+      { id: '2a', name: 'Tomatoes', price: 20 },
+      { id: '2b', name: 'Onions', price: 25 },
+      { id: '2c', name: 'Potatoes', price: 18 },
+    ],
+  },
+];
+
+// ✅ Distance Calculation Helper
+const getDistanceFromLatLonInKm = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number => {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [selectedShop, setSelectedShop] = useState<any | null>(null);
+  const [cart, setCart] = useState<{ [key: string]: number }>({});
+  const [orderSuccess, setOrderSuccess] = useState(false);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation not supported by your browser');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      (error) => {
+        console.error('Location error:', error.message);
+        alert(`Location Error: ${error.message}`);
+      }
+    );
+  };
+
+  const nearbyShops = location
+    ? shops.filter((shop) => {
+        const distance = getDistanceFromLatLonInKm(
+          location.lat,
+          location.lng,
+          shop.lat,
+          shop.lng
+        );
+        return distance <= 5;
+      })
+    : [];
+
+  const handlePlaceOrder = () => {
+    if (Object.keys(cart).length === 0) {
+      alert('Your cart is empty! Please add items to your cart.');
+      return;
+    }
+    setOrderSuccess(true);
+  };
+
+  return (
+    <main className="flex flex-col items-center justify-start min-h-screen py-8 px-4 bg-gray-50">
+      <h1 className="text-3xl font-bold mb-6 text-[#F26522]">📍 Instant Essentials Delivery</h1>
+
+      <button
+        onClick={detectLocation}
+        className="px-6 py-2 bg-[#F26522] text-white rounded-xl hover:bg-[#D45519] transition"
+      >
+        Detect My Location
+      </button>
+
+      {location && (
+        <div className="mt-4 text-center">
+          <p className="text-sm text-gray-700">
+            Latitude: {location.lat.toFixed(6)}
+            <br />
+            Longitude: {location.lng.toFixed(6)}
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      )}
+
+      {/* ✅ Nearby Shops List */}
+      {location && (
+        <div className="mt-8 w-full max-w-xl">
+          <h2 className="text-xl font-semibold mb-4 text-[#F26522]">Nearby Shops (within 5 km):</h2>
+
+          {nearbyShops.length === 0 ? (
+            <p className="text-gray-500">No shops found near your location.</p>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {nearbyShops.map((shop) => (
+                <div
+                  key={shop.id}
+                  onClick={() => setSelectedShop(shop)}
+                  className="border rounded-xl p-4 bg-white shadow-sm cursor-pointer hover:shadow-md"
+                >
+                  <h3 className="text-lg font-bold text-[#333]">{shop.name}</h3>
+                  <p className="text-sm text-gray-600">{shop.category}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ✅ Shop Items + Cart */}
+      {selectedShop && (
+        <div className="mt-10 w-full max-w-xl border-t pt-6">
+          <h2 className="text-xl font-semibold mb-4 text-[#F26522]">
+            🛍️ {selectedShop.name} - Items
+          </h2>
+
+          <div className="space-y-4">
+            {selectedShop.items.map((item: any) => (
+              <div key={item.id} className="flex justify-between items-center border-b pb-2">
+                <div>
+                  <p className="font-medium text-[#333]">{item.name}</p>
+                  <p className="text-sm text-gray-500">₹{item.price}</p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() =>
+                      setCart((prev) => ({
+                        ...prev,
+                        [item.id]: Math.max((prev[item.id] || 0) - 1, 0),
+                      }))
+                    }
+                    className="px-2 py-1 bg-red-500 text-white rounded"
+                  >
+                    -
+                  </button>
+                  <span>{cart[item.id] || 0}</span>
+                  <button
+                    onClick={() =>
+                      setCart((prev) => ({
+                        ...prev,
+                        [item.id]: (prev[item.id] || 0) + 1,
+                      }))
+                    }
+                    className="px-2 py-1 bg-green-600 text-white rounded"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* ✅ Cart Summary */}
+          <div className="mt-6 p-4 bg-gray-100 rounded-xl">
+            <h3 className="font-semibold mb-2 text-[#F26522]">Cart Summary</h3>
+            {Object.keys(cart).length === 0 ? (
+              <p className="text-sm text-gray-500">No items in cart</p>
+            ) : (
+              <ul className="text-sm space-y-1">
+                {selectedShop.items
+                  .filter((item: any) => cart[item.id])
+                  .map((item: any) => (
+                    <li key={item.id}>
+                      {item.name} × {cart[item.id]}
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
+
+          {/* ✅ Place Order Button */}
+          <div className="mt-8 text-center">
+            <button
+              onClick={handlePlaceOrder}
+              className="px-6 py-3 bg-[#3BB54A] text-white rounded-xl hover:bg-[#2f9e3a] transition"
+            >
+              Place Order
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Order Success Screen */}
+      {orderSuccess && (
+        <div className="mt-10 p-6 bg-white shadow-lg rounded-xl w-full max-w-xl text-center">
+          <h2 className="text-3xl font-bold text-[#3BB54A]">🎉 Order Placed Successfully!</h2>
+          <p className="mt-4 text-gray-700">Your order will be delivered shortly. Thank you for shopping with QuickBasket!</p>
+        </div>
+      )}
+    </main>
   );
 }
