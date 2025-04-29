@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 // ✅ Shops + Items Data
 const shops = [
@@ -50,9 +50,24 @@ const getDistanceFromLatLonInKm = (
   return R * c;
 };
 
+interface ShopItem {
+  id: string;
+  name: string;
+  price: number;
+}
+
+interface Shop {
+  id: number;
+  name: string;
+  lat: number;
+  lng: number;
+  category: string;
+  items: ShopItem[];
+}
+
 export default function Home() {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [selectedShop, setSelectedShop] = useState<any | null>(null);
+  const [selectedShop, setSelectedShop] = useState<Shop | null>(null);
   const [cart, setCart] = useState<{ [key: string]: number }>({});
   const [orderSuccess, setOrderSuccess] = useState(false);
 
@@ -149,7 +164,7 @@ export default function Home() {
           </h2>
 
           <div className="space-y-4">
-            {selectedShop.items.map((item: any) => (
+            {selectedShop.items.map((item) => (
               <div key={item.id} className="flex justify-between items-center border-b pb-2">
                 <div>
                   <p className="font-medium text-[#333]">{item.name}</p>
@@ -193,8 +208,8 @@ export default function Home() {
             ) : (
               <ul className="text-sm space-y-1">
                 {selectedShop.items
-                  .filter((item: any) => cart[item.id])
-                  .map((item: any) => (
+                  .filter((item) => cart[item.id])
+                  .map((item) => (
                     <li key={item.id}>
                       {item.name} × {cart[item.id]}
                     </li>
