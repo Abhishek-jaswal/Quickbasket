@@ -1,0 +1,5 @@
+recipe_id,name,ingredients,steps,cuisine,veg_nonveg,cooking_time
+1,Tomato Rice,"rice, tomato, onion, garlic, salt, oil","Cook rice, sauté onion + tomato + garlic, mix together.",Indian,veg,25
+2,Egg Curry,"egg, onion, tomato, garlic, ginger, spices","Boil eggs, make curry base, add eggs, simmer.",Indian,non-veg,30
+3,Fried Rice,"rice, egg, carrot, capsicum, soy sauce, oil","Stir fry veggies, add rice + egg, soy sauce, mix well.",Chinese,non-veg,20
+4,Pasta Arrabiata,"pasta, tomato, chili, garlic, olive oil, salt","Boil pasta, make tomato chili sauce, mix.",Italian,veg,25
